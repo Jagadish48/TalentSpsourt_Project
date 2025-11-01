@@ -4,172 +4,300 @@
 {% block title %}Take Test{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-  <div class="row">
-    <div class="col-md-9 mx-auto">
-      <div id="testSection" class="content-section active">
-        <!-- Dynamic Heading -->
-        <h4 id="sectionHeading" class="section-heading"></h4>
+<style>
+body {
+  background: linear-gradient(135deg, #eef8f1, #f8fbfd);
+  font-family: "Poppins", sans-serif;
+}
 
-        <!-- Error Message Box -->
-        {% if error %}
-        <div class="alert alert-danger" role="alert">
-          {{ error }}
+.test-wrapper {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.question-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  padding: 40px 35px 90px;
+  position: relative;
+  min-height: 450px;
+}
+
+.question-card h4 {
+  color: #267136;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.question-card p {
+  font-size: 18px;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 25px;
+}
+
+.form-check {
+  background: #f6f8f6;
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+}
+
+.form-check:hover {
+  background: #e6f3e8;
+}
+
+.form-check-input:checked + .form-check-label {
+  color: #267136;
+  font-weight: 600;
+}
+
+/* Bottom navigation */
+.nav-buttons {
+  position: absolute;
+  bottom: 25px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 35px;
+}
+
+.btn-green {
+  background-color: #267136;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 16px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.btn-green:hover {
+  background-color: #1f5c2a;
+  box-shadow: 0 0 8px rgba(38,113,54,0.4);
+}
+
+/* Sidebar */
+.sidebar {
+  width: 260px;
+  background: #fff;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 25px;
+  height: fit-content;
+}
+
+.timer {
+  font-size: 24px;
+  color: #267136;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tracker-labels {
+  display: flex;
+  justify-content: space-around;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.tracker-labels span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tracker-labels i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.i-attempted { background: #5bc76d; }
+.i-notattempted { background: #ccc; }
+
+.question-tracker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.tracker-item {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #eaeaea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.tracker-item.active {
+  background: #267136;
+  color: white;
+  transform: scale(1.1);
+}
+
+.tracker-item.attempted {
+  background: #5bc76d;
+  color: white;
+}
+
+.tracker-item.notattempted {
+  background: #ccc;
+  color: white;
+}
+</style>
+
+<div class="container test-wrapper">
+  <!-- Question Area -->
+  <div class="question-card">
+    <h4>Quantitative Aptitude</h4>
+    <hr>
+
+    <form id="testForm" method="post">
+      {% csrf_token %}
+      {% for question in questions %}
+      <div class="question-block" id="question_{{ forloop.counter }}" style="{% if not forloop.first %}display:none{% endif %};">
+        <p><strong>Question {{ forloop.counter }}:</strong> {{ question.text|safe }}</p>
+        {% for option in question.options_list %}
+        <div class="form-check">
+          <input class="form-check-input question-answer"
+                 type="radio"
+                 name="question_{{ question.id }}"
+                 value="{{ option }}"
+                 id="option_{{ question.id }}_{{ forloop.counter }}">
+          <label class="form-check-label"
+                 for="option_{{ question.id }}_{{ forloop.counter }}">
+            {{ option }}
+          </label>
         </div>
-        {% endif %}
-
-        <form id="testForm" method="post">
-          {% csrf_token %}
-
-          <!-- Questions Section -->
-          <div id="mcq-section">
-            <h4>Multiple Choice Questions</h4>
-            {% for question in questions %}
-              {% if question.type == 'MCQ' %}
-                <div class="question-section mb-3" data-question-id="{{ forloop.counter0 }}" 
-                     data-question-type="{{ question.type }}">
-                  <h5>Question {{ forloop.counter }}:</h5>
-                  <label for="question_{{ question.id }}">{{ question.text|safe }}</label>
-
-                  <!-- MCQ Options -->
-                  <div class="form-group mt-2">
-                    {% for option in question.options_list %}
-                      <div class="form-check" style="margin-bottom: 15px;">
-                        <input class="form-check-input question-answer" type="radio" 
-                               name="question_{{ question.id }}" 
-                               value="{{ option }}" 
-                               id="option_{{ question.id }}_{{ forloop.counter }}">
-                        <label class="form-check-label" 
-                               for="option_{{ question.id }}_{{ forloop.counter }}" 
-                               style="color: black; margin-top: 12px; font-size: 18px;">
-                          {{ option }}
-                        </label>
-                      </div>
-                    {% endfor %}
-                  </div>
-                </div>
-              {% endif %}
-            {% endfor %}
-          </div>
-
-          <!-- Submit Button for MCQs -->
-          <div class="text-center mt-3">
-            <button type="button" class="px-3" id="submit-mcq-btn" style="background-color: #267136; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px;">
-              <span>Submit MCQs</span>
-            </button>
-          </div>
-
-          <!-- Code Section -->
-          <div id="code-section" style="display: none;">
-            <h4>Code-Based Questions</h4>
-            {% for question in questions %}
-              {% if question.type == 'CODE' %}
-                <div class="question-section mb-3" data-question-id="{{ forloop.counter0 }}" 
-                     data-question-type="{{ question.type }}">
-                  <h5>Question {{ forloop.counter }}:</h5>
-                  <label for="question_{{ question.id }}">{{ question.text|safe }}</label>
-
-                  <!-- Code Editor -->
-                  <div id="editor_{{ forloop.counter0 }}" class="ace-editor" style="height: 300px; width: 100%; border: 1px solid #ddd;"></div>
-                  <textarea id="hidden_editor_{{ forloop.counter0 }}" class="question-answer" name="question_{{ question.id }}" style="display: none;"></textarea>
-                </div>
-              {% endif %}
-            {% endfor %}
-          </div>
-
-          <!-- Final Submit Button -->
-          <div class="text-center mt-3" id="final-submit-btn" style="display: none;">
-            <button type="submit" class="px-3" style="background-color: #267136; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px;">
-              <span>Submit Test</span>
-            </button>
-          </div>
-        </form>
+        {% endfor %}
       </div>
+      {% endfor %}
+
+      <!-- Navigation Buttons -->
+      <div class="nav-buttons">
+        <button type="button" id="prevBtn" class="btn-green" disabled>Previous</button>
+        <button type="button" id="nextBtn" class="btn-green">Next</button>
+        <button type="submit" id="submitBtn" class="btn-green" style="display:none;">Submit Test</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="timer" id="timer">45:00</div>
+    <div class="tracker-labels">
+      <span><i class="i-attempted"></i> Attempted</span>
+      <span><i class="i-notattempted"></i> Not Attempted</span>
+    </div>
+    <hr>
+    <h6 class="text-center mb-2">Questions</h6>
+    <div class="question-tracker">
+      {% for question in questions %}
+      <div class="tracker-item notattempted {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter }}">
+        {{ forloop.counter }}
+      </div>
+      {% endfor %}
     </div>
   </div>
 </div>
+
 {% endblock %}
 
-
-
 {% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.9.6/ace.js"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const mcqSection = document.getElementById('mcq-section');
-    const codeSection = document.getElementById('code-section');
-    const submitMCQBtn = document.getElementById('submit-mcq-btn');
-    const finalSubmitBtn = document.getElementById('final-submit-btn');
-    const sectionHeading = document.getElementById('sectionHeading');
-    let currentSectionIndex = 0;
-    
-    // Initialize Ace Editors for Code-Based Questions
-    const editors = [];
-    const sections = document.querySelectorAll('.question-section');
-    
-    sections.forEach((section, index) => {
-        const editorDiv = document.getElementById(`editor_${index}`);
-        const hiddenField = document.getElementById(`hidden_editor_${index}`);
-        
-        if (editorDiv) {
-            const editor = ace.edit(editorDiv);
-            editor.setTheme("ace/theme/monokai");
-            editor.session.setMode("ace/mode/javascript");
-            editor.setOptions({
-                fontSize: "16px",
-                wrap: true,
-                showPrintMargin: false
-            });
+  let current = 1;
+  const total = {{ questions|length }};
+  const nextBtn = document.getElementById('nextBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const submitBtn = document.getElementById('submitBtn');
+  const trackerItems = document.querySelectorAll('.tracker-item');
+  const answers = {};
 
-            // Sync with hidden textarea
-            editors.push({ editor, hiddenField });
-            editor.session.on('change', function () {
-                hiddenField.value = editor.getValue();
-            });
-        }
+  function showQuestion(index) {
+    document.querySelectorAll('.question-block').forEach((q, i) => {
+      q.style.display = (i + 1 === index) ? 'block' : 'none';
     });
+    trackerItems.forEach((item, i) => {
+      item.classList.toggle('active', i + 1 === index);
+    });
+    prevBtn.disabled = index === 1;
+    nextBtn.style.display = index === total ? 'none' : 'inline-block';
+    submitBtn.style.display = index === total ? 'inline-block' : 'none';
+  }
 
-    // Show next section
-    function switchSection() {
-        if (currentSectionIndex === 0) {
-            mcqSection.style.display = 'block';
-            codeSection.style.display = 'none';
-            submitMCQBtn.style.display = 'inline-block';
-        } else if (currentSectionIndex === 1) {
-            mcqSection.style.display = 'none';
-            codeSection.style.display = 'block';
-            finalSubmitBtn.style.display = 'inline-block';
-        }
+  nextBtn.addEventListener('click', function () {
+    if (current < total) {
+      current++;
+      showQuestion(current);
     }
+  });
 
-    // Handle MCQ Submit
-    submitMCQBtn.addEventListener('click', function () {
-        submitMCQBtn.style.display = 'none';
-        currentSectionIndex++;
-        switchSection();
-    });
+  prevBtn.addEventListener('click', function () {
+    if (current > 1) {
+      current--;
+      showQuestion(current);
+    }
+  });
 
-    // Handle Final Submit
-    finalSubmitBtn.addEventListener('click', function () {
-        editors.forEach(({ editor, hiddenField }) => {
-            hiddenField.value = editor.getValue();
-        });
+  trackerItems.forEach(item => {
+    item.addEventListener('click', () => {
+      current = parseInt(item.getAttribute('data-index'));
+      showQuestion(current);
     });
- // Disable copy, paste, right-click, Ctrl+P, and Ctrl+C
-    document.addEventListener('contextmenu', (event) => event.preventDefault()); // Disable right-click
-    document.addEventListener('copy', (event) => event.preventDefault()); // Disable copy
-    document.addEventListener('paste', (event) => event.preventDefault()); // Disable paste
-    document.addEventListener('keydown', (event) => {
-        if (
-            event.ctrlKey && 
-            (event.key === 'c' || event.key === 'p')
-        ) {
-            event.preventDefault();
-        }
+  });
+
+  // Track attempted / not attempted
+  document.querySelectorAll('.question-answer').forEach(input => {
+    input.addEventListener('change', function () {
+      const questionNum = parseInt(this.name.split('_').pop());
+      const tracker = trackerItems[questionNum - 1];
+      tracker.classList.remove('notattempted');
+      tracker.classList.add('attempted');
     });
-    // Initial setup to display the first section
-    switchSection();
+  });
+
+  // Timer
+  const timerDisplay = document.getElementById('timer');
+  let time = 45 * 60; // 45 min
+  const timerInterval = setInterval(() => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    if (time <= 0) {
+      clearInterval(timerInterval);
+      alert("Time's up! Auto-submitting your test.");
+      document.getElementById('testForm').submit();
+    }
+    time--;
+  }, 1000);
+
+  // Prevent copying
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('copy', e => e.preventDefault());
+  document.addEventListener('paste', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey && ['c','p'].includes(e.key)) e.preventDefault();
+  });
+
+  showQuestion(current);
 });
 </script>
 {% endblock %}
